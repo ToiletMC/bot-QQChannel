@@ -14,6 +14,7 @@
   "author": "XXY233",
   "license": "ISC",
   "dependencies": {
+    "mcquery": "^1.0.3",
     "qq-guild-bot": "^2.9.5"
   }
 }
