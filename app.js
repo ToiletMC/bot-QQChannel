@@ -19,45 +19,31 @@ const client = createOpenAPI(botConfig);
 const ws = createWebsocket(botConfig);
 
 // 马的，这 mcquery 的 sb 回调函数，搞心态。暂时不知道更好的实现办法
-let query, last_channel_id, last_msg_id;
+let last_channel_id, last_msg_id;
 
-ws.on("GUILD_MESSAGES", (data) => {
+ws.on("GUILD_MESSAGES", async (data) => {
   if (data.msg.content.includes("/list")) {
-    query = new Query(HOST, PORT);
-    query
-      .connect()
-      .then(() => {
-        console.log("Asking for full_stat");
-        last_channel_id = data.msg.channel_id;
-        last_msg_id = data.msg.id;
-        query.full_stat(fullStatBack);
-      })
-      .catch((err) => {
-        console.error("error connecting", err);
-      });
+    const query = new Query(HOST, PORT);
+    await query.connect();
+    query.full_stat(() => {
+      if (err) {
+        console.error(err);
+      }
+      const respone = {
+        online: stat.numplayers,
+        maxplayers: stat.maxplayers,
+        players: stat.player_,
+      };
+      sendMessage(
+        data.msg.channel_id,
+        data.msg.id,
+        `在线玩家（${respone.online}/${respone.maxplayers}）：` +
+          respone.players.join("，")
+      );
+      shouldWeClose();
+    });
   }
 });
-
-function fullStatBack(err, stat) {
-  if (err) {
-    console.error(err);
-  }
-
-  const respone = {
-    online: stat.numplayers,
-    maxplayers: stat.maxplayers,
-    players: stat.player_,
-  };
-
-  sendMessage(
-    last_channel_id,
-    last_msg_id,
-    `在线玩家（${respone.online}/${respone.maxplayers}）：` +
-      respone.players.join("，")
-  );
-
-  shouldWeClose();
-}
 
 function shouldWeClose() {
   // have we got all answers
